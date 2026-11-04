@@ -217,8 +217,8 @@ For example, `AP,2,17.3,86` means note index 2 (E4), 17.3 cm away, LED at 86 per
 
 ## Credits
 
-- Assignment: Microprocessors Lab, Assignment 3 "Air Piano", Dr. Mohsen Raji, Shiraz University, Fall 2026.
-- Implementation: `<your name>`
+- Assignment: Microprocessors Lab, Assignment "Air Piano", Shiraz University, Fall 2026.
+- Implementation: `<Moein Yeganeh>`
 
 ## License
 
