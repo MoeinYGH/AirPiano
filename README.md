@@ -222,4 +222,4 @@ For example, `AP,2,17.3,86` means note index 2 (E4), 17.3 cm away, LED at 86 per
 
 ## License
 
-Add a license of your choice (for example MIT) if you want others to reuse the code.
+This project is released under the [MIT License](LICENSE).
