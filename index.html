@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AirPiano</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
+<style>
+@property --gc { syntax: '<color>'; inherits: true; initial-value: rgba(0,0,0,0); }
+
+:root {
+  --bg: #07070d;
+  --ink: #eceaf5;
+  --mute: #8d89a6;
+  --gold: #d9b46a;
+  --line: rgba(255,255,255,.08);
+  --card: rgba(255,255,255,.04);
+  --gc: rgba(0,0,0,0);
+  --serif: 'Playfair Display', 'Iowan Old Style', Georgia, serif;
+  --sans: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  min-height: 100vh; background: var(--bg); color: var(--ink);
+  font: 400 15px/1.5 var(--sans); overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+.aurora { position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 15% -5%, rgba(110,80,255,.28), transparent 60%),
+    radial-gradient(45% 40% at 95% 5%, rgba(0,200,220,.16), transparent 60%),
+    radial-gradient(70% 45% at 50% 115%, rgba(255,90,120,.16), transparent 60%),
+    var(--bg);
+}
+.aura { position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(65% 50% at 50% 78%, var(--gc), transparent 70%);
+  transition: --gc .28s ease;
+}
+.app { max-width: 1120px; margin: 0 auto; padding: 28px 22px 60px; }
+
+/* ---------- header ---------- */
+header { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; justify-content: space-between; margin-bottom: 26px; }
+.brand { display: flex; align-items: baseline; gap: 14px; }
+.brand h1 { font: italic 500 34px/1 var(--serif); letter-spacing: .01em; }
+.brand h1 b { font-style: normal; background: linear-gradient(90deg,#ff5a6e,#ffb347,#ffe14a,#3df58f,#35e3e3,#5b86ff,#a05cff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.brand span { color: var(--mute); font-size: 12px; letter-spacing: .22em; text-transform: uppercase; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.seg { display: inline-flex; padding: 4px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); backdrop-filter: blur(12px); }
+.seg button { all: unset; cursor: pointer; padding: 7px 14px; border-radius: 999px; font-size: 13px; color: var(--mute); transition: .2s; }
+.seg button:hover { color: var(--ink); }
+.seg button.active { background: rgba(255,255,255,.1); color: var(--ink); box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); }
+.pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; font-size: 13px; background: var(--card); border: 1px solid var(--line); color: var(--mute); max-width: 360px; }
+.pill i { width: 8px; height: 8px; border-radius: 50%; background: #66627a; flex: none; }
+.pill.ok i { background: #3df58f; box-shadow: 0 0 10px #3df58f; }
+.pill.wait i { background: #ffc247; box-shadow: 0 0 10px #ffc247; animation: blink 1s infinite; }
+.pill.bad i { background: #ff5a6e; box-shadow: 0 0 10px #ff5a6e; }
+@keyframes blink { 50% { opacity: .3; } }
+.tog { all: unset; cursor: pointer; padding: 8px 14px; border-radius: 999px; font-size: 13px; border: 1px solid var(--line); background: var(--card); color: var(--mute); transition: .2s; }
+.tog.on { color: #111; background: var(--gold); border-color: var(--gold); }
+
+/* ---------- cards ---------- */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 20px 22px; backdrop-filter: blur(14px); position: relative; }
+.eyebrow { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--mute); }
+.hero { display: grid; grid-template-columns: 1fr 1.35fr 1fr; gap: 16px; margin-bottom: 18px; }
+.metric { display: flex; flex-direction: column; justify-content: space-between; min-height: 200px; }
+.big { font: 500 54px/1 var(--serif); font-variant-numeric: tabular-nums; margin-top: 14px; }
+.big small { font: 400 16px var(--sans); color: var(--mute); margin-left: 6px; }
+.sub { color: var(--mute); font-size: 13px; }
+.bar { height: 6px; border-radius: 6px; background: rgba(255,255,255,.07); overflow: hidden; margin-top: 8px; }
+.bar > i { display: block; height: 100%; width: 0; border-radius: 6px; background: linear-gradient(90deg, rgba(var(--rgb,255,255,255),.4), rgb(var(--rgb,255,255,255))); transition: width .1s, background .2s; }
+
+.nowcard { text-align: center; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px; }
+.nowcard::before { content: ''; position: absolute; inset: 0; background: radial-gradient(60% 70% at 50% 40%, rgba(var(--rgb,255,255,255), var(--ga,0)), transparent 70%); transition: background .2s; pointer-events: none; }
+.phase { position: absolute; top: 16px; left: 18px; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--mute); }
+.phase.rec { color: #ff5a6e; } .phase.play { color: #3df58f; }
+.bignote { position: relative; font: 500 clamp(84px, 11vw, 132px)/1 var(--serif); color: rgba(255,255,255,.16); transition: color .15s, text-shadow .15s; }
+.bignote sub { font-size: .32em; vertical-align: baseline; margin-left: 2px; opacity: .8; }
+.bignote.live { color: rgb(var(--rgb)); text-shadow: 0 0 50px rgba(var(--rgb), .65), 0 0 12px rgba(var(--rgb), .45); }
+.solf { position: relative; font: italic 500 20px var(--serif); color: var(--mute); height: 26px; }
+.hz { position: relative; margin-top: 4px; font-size: 12px; letter-spacing: .16em; color: var(--mute); text-transform: uppercase; }
+
+.led { width: 70px; height: 70px; border-radius: 50%; margin-top: 12px; position: relative;
+  background: #15141c; box-shadow: inset 0 0 0 3px #26242f, inset 0 6px 14px rgba(0,0,0,.6); transition: background .08s, box-shadow .08s; }
+.led::after { content: ''; position: absolute; left: 16%; top: 12%; width: 34%; height: 26%; border-radius: 50%; background: rgba(255,255,255,.28); filter: blur(2px); }
+.ledrow { display: flex; align-items: center; gap: 16px; }
+
+/* ---------- piano ---------- */
+.stage { position: relative; touch-action: none; user-select: none; -webkit-user-select: none; }
+.piano { position: relative; padding: 18px 24px 30px; border-radius: 28px 28px 20px 20px;
+  background: linear-gradient(180deg, #1d1c28, #0c0c12 70%);
+  box-shadow: 0 50px 90px -30px #000, 0 0 0 1px rgba(255,255,255,.06), inset 0 1px 0 rgba(255,255,255,.1);
+}
+.piano::before { content: ''; position: absolute; left: 24px; right: 24px; top: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: .7; }
+.plate { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); opacity: .85; }
+.plate em { font: italic 500 14px var(--serif); letter-spacing: .08em; text-transform: none; }
+#fx { position: absolute; left: 0; right: 0; top: -130px; width: 100%; height: calc(100% + 130px); pointer-events: none; z-index: 5; }
+
+.gauge { position: relative; margin: 34px 0 10px; }
+.bands { display: flex; height: 50px; }
+.band { flex: 1; position: relative; border-left: 1px solid rgba(255,255,255,.07); transition: background .12s, box-shadow .12s;
+  background: linear-gradient(180deg, rgba(var(--rgb),.20), rgba(var(--rgb),.04)); }
+.band:first-child { border-radius: 12px 0 0 12px; border-left: 0; }
+.band:last-child { border-radius: 0 12px 12px 0; }
+.band.on { background: linear-gradient(180deg, rgba(var(--rgb), calc(.35 + .5*var(--b,1))), rgba(var(--rgb), .15)); box-shadow: 0 0 30px rgba(var(--rgb), .45); }
+.band span { position: absolute; bottom: 5px; left: 0; right: 0; text-align: center; font-size: 10px; letter-spacing: .08em; color: rgba(255,255,255,.45); }
+.hand { position: absolute; top: -8px; bottom: -8px; left: 0; width: 0; pointer-events: none; opacity: 0; transition: left .09s linear, opacity .2s; z-index: 4; --rgb: 255,255,255; }
+.hand .line { position: absolute; left: -1px; top: 0; bottom: 0; width: 2px; border-radius: 2px; background: linear-gradient(#fff, rgba(255,255,255,.15)); box-shadow: 0 0 16px rgba(var(--rgb), .95); }
+.hand .tag { position: absolute; left: 0; top: -28px; transform: translateX(-50%); padding: 3px 9px; border-radius: 999px; background: #fff; color: #111; font: 600 12px var(--sans); white-space: nowrap; font-variant-numeric: tabular-nums; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+.hand.out .line { opacity: .4; box-shadow: none; } .hand.out .tag { background: #55526a; color: #ddd; }
+
+.keys { position: relative; display: flex; height: 260px; padding-top: 2px; }
+.key { flex: 1; position: relative; cursor: pointer; border-radius: 0 0 14px 14px; overflow: hidden;
+  background: linear-gradient(180deg, #fbfaf6 0%, #ece8dd 88%, #cdc7b6 100%);
+  box-shadow: inset -1px 0 0 rgba(0,0,0,.18), inset 1px 0 0 rgba(255,255,255,.9), 0 8px 0 #9b9585, 0 14px 22px rgba(0,0,0,.5);
+  transform-origin: top; transition: transform .07s ease, box-shadow .12s;
+  margin: 0 1px;
+}
+.key::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity .1s;
+  background: linear-gradient(180deg, rgb(var(--rgb)) 0%, rgba(var(--rgb), .55) 55%, rgba(var(--rgb), .25) 100%); }
+.key::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 40%; background: linear-gradient(180deg, rgba(255,255,255,.55), transparent); opacity: 0; transition: opacity .1s; }
+.key.on { transform: translateY(5px) scaleY(.99);
+  box-shadow: inset -1px 0 0 rgba(0,0,0,.18), 0 3px 0 #8a8474, 0 0 calc(18px + 50px*var(--b,1)) rgba(var(--rgb), calc(.35 + .5*var(--b,1))); }
+.key.on::before { opacity: calc(.4 + .6*var(--b,1)); }
+.key.on::after { opacity: calc(.3*var(--b,1)); }
+.key .solf { position: absolute; left: 0; right: 0; bottom: 56px; text-align: center; height: auto; font: italic 500 15px var(--serif); color: rgba(20,18,30,.4); }
+.key .kname { position: absolute; left: 0; right: 0; bottom: 18px; text-align: center; font: 600 17px var(--sans); color: rgba(20,18,30,.55); }
+.key .kname sub { font-size: 10px; margin-left: 1px; vertical-align: baseline; opacity: .7; }
+.key.on .solf, .key.on .kname { color: rgba(0,0,0,.78); }
+.black { position: absolute; top: 2px; z-index: 3; width: 7.2%; height: 58%; border-radius: 0 0 9px 9px; pointer-events: none;
+  background: linear-gradient(180deg, #34333f 0%, #0b0b10 70%, #000 100%);
+  box-shadow: 0 10px 18px rgba(0,0,0,.65), inset 0 -8px 10px rgba(255,255,255,.05), inset 0 1px 0 rgba(255,255,255,.12); }
+.hint { margin-top: 18px; text-align: center; color: var(--mute); font-size: 12px; letter-spacing: .04em; }
+
+/* ---------- lower row ---------- */
+.lower { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; min-height: 60px; align-content: flex-start; }
+.chip { padding: 6px 11px; border-radius: 12px; font-size: 13px; font-weight: 600; color: #fff; background: rgba(var(--rgb), .22); border: 1px solid rgba(var(--rgb), .55); transition: .15s; }
+.chip small { font-weight: 400; opacity: .65; margin-left: 5px; }
+.chip.hl { background: rgb(var(--rgb)); color: #000; box-shadow: 0 0 20px rgba(var(--rgb), .8); transform: translateY(-2px); }
+.empty { color: var(--mute); font-size: 13px; }
+.console { margin-top: 14px; height: 150px; overflow-y: auto; font: 12px/1.7 ui-monospace, 'SF Mono', Menlo, Consolas, monospace; color: #b8b4cf; scrollbar-width: thin; }
+.console div.note { color: #fff; } .console div.sys { color: var(--gold); } .console div.err { color: #ff7a8a; }
+details { margin-top: 18px; }
+summary { cursor: pointer; color: var(--mute); font-size: 13px; padding: 10px 0; }
+details pre { background: rgba(0,0,0,.35); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; overflow-x: auto; font: 12px/1.7 ui-monospace, Menlo, Consolas, monospace; color: #cfcbe6; margin: 8px 0 14px; }
+details p { color: var(--mute); font-size: 13px; margin: 6px 0; }
+details code { color: var(--gold); }
+
+@media (max-width: 860px) {
+  .hero { grid-template-columns: 1fr; } .lower { grid-template-columns: 1fr; }
+  .metric { min-height: 0; gap: 14px; } .keys { height: 190px; } .piano { padding: 14px 12px 24px; }
+  .key .solf { display: none; } .key .kname { bottom: 10px; font-size: 14px; } .band span { font-size: 8px; }
+  .plate { font-size: 9px; letter-spacing: .2em; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="aurora"></div><div class="aura"></div>
+
+<div class="app">
+  <header>
+    <div class="brand"><h1>Air<b>Piano</b></h1><span>HC-SR04 · Wokwi</span></div>
+    <div class="controls">
+      <div class="seg" id="modes">
+        <button data-mode="bridge">Wokwi bridge</button>
+        <button data-mode="serial">USB serial</button>
+        <button data-mode="demo" class="active">Demo</button>
+      </div>
+      <div class="pill" id="status"><i></i><span>Demo mode — move your cursor over the keys</span></div>
+      <button class="tog" id="sound">🔈 Sound off</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="card metric">
+      <div>
+        <div class="eyebrow">Distance</div>
+        <div class="big"><span id="dist">—</span><small>cm</small></div>
+      </div>
+      <div class="sub">Range 5 – 45 cm · 8 bands of 5 cm</div>
+    </div>
+
+    <div class="card nowcard" id="nowcard">
+      <div class="phase" id="phase">Live</div>
+      <div class="bignote" id="bignote">–</div>
+      <div class="solf" id="solf">&nbsp;</div>
+      <div class="hz" id="hz">Silence</div>
+    </div>
+
+    <div class="card metric">
+      <div>
+        <div class="eyebrow">RGB LED</div>
+        <div class="ledrow"><div class="led" id="led"></div>
+          <div style="flex:1">
+            <div class="sub">Brightness</div>
+            <div class="bar"><i id="bright"></i></div>
+            <div class="sub" style="margin-top:6px" id="brightTxt">0 %</div>
+          </div>
+        </div>
+      </div>
+      <div class="sub">Brightest in the middle of each band</div>
+    </div>
+  </section>
+
+  <section class="stage" id="stage">
+    <div class="piano">
+      <canvas id="fx"></canvas>
+      <div class="plate"><span>8 notes · C major</span><em>AirPiano</em><span>Ultrasonic grand</span></div>
+      <div class="gauge" id="gauge">
+        <div class="bands" id="bands"></div>
+        <div class="hand" id="hand"><div class="line"></div><div class="tag" id="tag">0 cm</div></div>
+      </div>
+      <div class="keys" id="keys"></div>
+    </div>
+    <div class="hint" id="hint">Closer to the sensor = lower note (C4 at 5 cm → C5 at 40+ cm). Black keys are decorative.</div>
+  </section>
+
+  <section class="lower">
+    <div class="card">
+      <div class="eyebrow">Recorded melody <span style="opacity:.6">· hold REC, release to save, hold PLAY to hear</span></div>
+      <div class="chips" id="chips"><span class="empty">Nothing recorded yet.</span></div>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Serial monitor</div>
+      <div class="console" id="console"></div>
+    </div>
+  </section>
+
+  <details>
+    <summary>How do I connect this to Wokwi?</summary>
+    <p><b>1.</b> Replace your sketch with <code>sketch.ino</code> (it adds one line: <code>AP,&lt;note&gt;,&lt;cm&gt;,&lt;brightness&gt;</code>).</p>
+    <p><b>2.</b> The online wokwi.com page can't hand its serial output to another web page, so run the sim with the Wokwi VS Code extension (or Wokwi CLI) and use the bridge:</p>
+<pre># Wokwi for VS Code — add to wokwi.toml, then start the simulation
+[wokwi]
+rfc2217ServerPort = 4000
+
+# in this folder:
+node bridge.js                       # reads rfc2217://localhost:4000
+
+# or with the Wokwi CLI
+wokwi-cli . | node bridge.js --stdin</pre>
+    <p><b>3.</b> Open <code>http://localhost:8787</code> (the bridge serves this page) and click <b>Wokwi bridge</b>.</p>
+    <p>Real Arduino on USB instead? Click <b>USB serial</b> (Chrome / Edge). No hardware at all? <b>Demo</b> lets you play with the cursor.</p>
+  </details>
+</div>
+
+<script>
+(() => {
+  // ---------- data (mirrors the sketch) ----------
+  const NAMES  = ["C4","D4","E4","F4","G4","A4","B4","C5"];
+  const SOLFA  = ["Do","Re","Mi","Fa","Sol","La","Si","Do"];
+  const FREQ   = [262,294,330,349,392,440,494,523];
+  const LEDRGB = [[255,0,0],[255,100,0],[255,220,0],[0,255,0],[0,220,220],[0,0,255],[75,0,200],[160,0,255]];
+  const UIRGB  = ["255,70,90","255,140,45","255,217,58","53,240,138","45,227,227","80,125,255","124,92,255","180,92,255"]; // brighter versions for the screen
+  const MIN_CM = 5, MAX_CM = 45, BAND = 5;
+  const $ = s => document.querySelector(s);
+
+  // ---------- build UI ----------
+  const keysEl = $('#keys'), bandsEl = $('#bands');
+  NAMES.forEach((n, i) => {
+    const k = document.createElement('div');
+    k.className = 'key'; k.style.setProperty('--rgb', UIRGB[i]);
+    k.innerHTML = `<span class="solf">${SOLFA[i]}</span><span class="kname">${n[0]}<sub>${n.slice(1)}</sub></span>`;
+    keysEl.appendChild(k);
+    const b = document.createElement('div');
+    b.className = 'band'; b.style.setProperty('--rgb', UIRGB[i]);
+    b.innerHTML = `<span>${MIN_CM + i*BAND}–${MIN_CM + (i+1)*BAND}</span>`;
+    bandsEl.appendChild(b);
+  });
+  [1,2,4,5,6].forEach(p => {   // C#, D#, F#, G#, A#
+    const bk = document.createElement('div');
+    bk.className = 'black'; bk.style.left = `calc(${p*12.5}% - 3.6%)`;
+    keysEl.appendChild(bk);
+  });
+  const keys = [...keysEl.querySelectorAll('.key')], bands = [...bandsEl.children];
+  const hand = $('#hand'), tag = $('#tag'), nowcard = $('#nowcard'), bignote = $('#bignote');
+
+  // ---------- show the current note ----------
+  let cur = -2, curB = 0;
+  function show(idx, d, b) {
+    cur = idx; curB = b;
+    keys.forEach((k, i) => { const on = i === idx; k.classList.toggle('on', on); if (on) k.style.setProperty('--b', (.1 + .9*b).toFixed(2)); });
+    bands.forEach((k, i) => { const on = i === idx; k.classList.toggle('on', on); if (on) k.style.setProperty('--b', b.toFixed(2)); });
+
+    const root = document.documentElement;
+    if (idx >= 0) {
+      const rgb = UIRGB[idx];
+      nowcard.style.setProperty('--rgb', rgb); nowcard.style.setProperty('--ga', (.12 + .2*b).toFixed(2));
+      bignote.style.setProperty('--rgb', rgb); bignote.classList.add('live');
+      bignote.innerHTML = `${NAMES[idx][0]}<sub>${NAMES[idx].slice(1)}</sub>`;
+      $('#solf').textContent = SOLFA[idx];
+      $('#hz').textContent = FREQ[idx] + ' Hz';
+      root.style.setProperty('--gc', `rgba(${rgb},${(.18 + .22*b).toFixed(2)})`);
+      const c = LEDRGB[idx].map(v => Math.round(v*b));
+      $('#led').style.background = `rgb(${c})`;
+      $('#led').style.boxShadow = `inset 0 0 0 3px #26242f, 0 0 ${18+50*b}px rgba(${LEDRGB[idx]},${(.35+.5*b).toFixed(2)})`;
+      const bar = $('#bright'); bar.style.setProperty('--rgb', rgb); bar.style.width = (b*100) + '%';
+      $('#brightTxt').textContent = Math.round(b*100) + ' %';
+    } else {
+      nowcard.style.setProperty('--ga', 0);
+      bignote.classList.remove('live'); bignote.textContent = '–';
+      $('#solf').innerHTML = '&nbsp;'; $('#hz').textContent = 'Silence';
+      root.style.setProperty('--gc', 'rgba(0,0,0,0)');
+      $('#led').style.background = ''; $('#led').style.boxShadow = '';
+      $('#bright').style.width = '0'; $('#brightTxt').textContent = '0 %';
+    }
+
+    $('#dist').textContent = d > 0 ? d.toFixed(1) : '—';
+    if (d > 0 && d < 80 && phase !== 'play') {
+      hand.style.opacity = 1;
+      hand.style.left = (Math.min(1, Math.max(0, (d - MIN_CM)/(MAX_CM - MIN_CM)))*100) + '%';
+      hand.style.setProperty('--rgb', idx >= 0 ? UIRGB[idx] : '120,118,140');
+      hand.classList.toggle('out', idx < 0);
+      tag.textContent = d.toFixed(1) + ' cm';
+    } else hand.style.opacity = 0;
+
+    if (soundOn) { idx >= 0 ? startTone(FREQ[idx]) : stopTone(); }
+  }
+  const fromDist = d => {
+    if (d >= MIN_CM && d < MAX_CM) {
+      const idx = Math.min(7, Math.floor((d - MIN_CM)/BAND));
+      const pos = (d - MIN_CM - idx*BAND)/BAND;
+      return { idx, b: .1 + .9*(1 - Math.abs(pos - .5)*2) };
+    }
+    return { idx: -1, b: 0 };
+  };
+
+  // ---------- melody + console ----------
+  const chipsEl = $('#chips'), consoleEl = $('#console');
+  let chips = [];
+  function clearMelody() { chips = []; chipsEl.innerHTML = '<span class="empty">Recording…</span>'; }
+  function addChip(idx, len) {
+    if (!chips.length) chipsEl.innerHTML = '';
+    const c = document.createElement('div'); c.className = 'chip'; c.style.setProperty('--rgb', UIRGB[idx]);
+    c.innerHTML = `${NAMES[idx]}<small>${len} ms</small>`; chipsEl.appendChild(c); chips.push(c);
+  }
+  function hl(i) { chips.forEach((c, j) => c.classList.toggle('hl', j === i)); }
+  function log(text, cls = '') {
+    const d = document.createElement('div'); d.textContent = text; if (cls) d.className = cls;
+    consoleEl.appendChild(d);
+    while (consoleEl.children.length > 120) consoleEl.firstChild.remove();
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+  }
+
+  // ---------- parse serial lines from the sketch ----------
+  let phase = 'live', playIdx = 0, playTimer = null;
+  function setPhase(p) {
+    phase = p; const el = $('#phase'); el.className = 'phase ' + (p === 'live' ? '' : p);
+    el.textContent = p === 'rec' ? '● Recording' : p === 'play' ? '▶ Playback' : 'Live';
+  }
+  function handleLine(raw) {
+    const line = raw.trim(); if (!line) return;
+    let m;
+    if ((m = line.match(/^AP,(-?\d+),(-?\d+(?:\.\d+)?),(\d+)$/))) {
+      if (phase === 'play') return;
+      const idx = +m[1], d = +m[2], b = Math.min(1, +m[3]/100);
+      if (idx !== cur) log(idx >= 0 ? `▸ ${NAMES[idx]}  ${d.toFixed(1)} cm` : '▸ —', idx >= 0 ? 'note' : '');
+      show(idx, d, b); return;
+    }
+    log(line, /^---/.test(line) ? 'sys' : '');
+    if (/AirPiano ready/.test(line)) setPhase('live');
+    else if (/--- Recording ---/.test(line)) { setPhase('rec'); clearMelody(); }
+    else if (/--- Saved ---/.test(line)) setPhase('live');
+    else if (/--- Playback ---/.test(line)) { setPhase('play'); playIdx = 0; hl(-1); }
+    else if (/--- Done ---/.test(line)) { clearTimeout(playTimer); setPhase('live'); show(-1, -1, 0); hl(-1); }
+    else if ((m = line.match(/^([A-G]\d)\s+(\d+)ms$/))) {
+      const idx = NAMES.indexOf(m[1]), len = +m[2]; if (idx < 0) return;
+      if (phase === 'play') {
+        show(idx, -1, 1); hl(playIdx++);
+        clearTimeout(playTimer); playTimer = setTimeout(() => show(-1, -1, 0), len);
+      } else addChip(idx, len);
+    }
+  }
+
+  // ---------- sound (optional, in-browser) ----------
+  let soundOn = false, ac, osc, gain, lp;
+  function startTone(f) {
+    if (!ac) return;
+    if (osc) { osc.frequency.setTargetAtTime(f, ac.currentTime, .01); return; }
+    osc = ac.createOscillator(); gain = ac.createGain(); lp = ac.createBiquadFilter();
+    osc.type = 'triangle'; osc.frequency.value = f; lp.type = 'lowpass'; lp.frequency.value = 2200;
+    gain.gain.value = 0; gain.gain.setTargetAtTime(.22, ac.currentTime, .015);
+    osc.connect(lp); lp.connect(gain); gain.connect(ac.destination); osc.start();
+  }
+  function stopTone() {
+    if (!osc) return; const o = osc, g = gain; osc = null;
+    g.gain.setTargetAtTime(0, ac.currentTime, .03); setTimeout(() => { try { o.stop(); } catch (e) {} }, 200);
+  }
+  $('#sound').onclick = () => {
+    soundOn = !soundOn;
+    if (soundOn) { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); if (cur >= 0) startTone(FREQ[cur]); }
+    else stopTone();
+    $('#sound').classList.toggle('on', soundOn); $('#sound').textContent = soundOn ? '🔊 Sound on' : '🔈 Sound off';
+  };
+
+  // ---------- connections ----------
+  let mode = 'demo', es = null, port = null, reader = null;
+  const BRIDGE = location.port === '8787' ? location.origin : 'http://localhost:8787';
+  function setStatus(kind, text) { const p = $('#status'); p.className = 'pill ' + kind; p.lastElementChild.textContent = text; }
+  function setMode(m) { mode = m; document.querySelectorAll('#modes button').forEach(b => b.classList.toggle('active', b.dataset.mode === m)); }
+  async function disconnect() {
+    if (es) { es.close(); es = null; }
+    if (reader) { try { await reader.cancel(); } catch (e) {} reader = null; }
+    if (port) { try { await port.close(); } catch (e) {} port = null; }
+  }
+  async function goDemo() {
+    await disconnect(); setMode('demo'); setPhase('live'); show(-1, -1, 0);
+    setStatus('', 'Demo mode — move your cursor over the keys');
+    $('#hint').textContent = 'Move your cursor across the keys — it acts like your hand over the sensor.';
+  }
+  function goBridge() {
+    disconnect(); setMode('bridge'); setStatus('wait', 'Connecting to bridge…'); show(-1, -1, 0);
+    $('#hint').textContent = 'Closer to the sensor = lower note (C4 at 5 cm → C5 at 40+ cm). Black keys are decorative.';
+    es = new EventSource(BRIDGE + '/events');
+    es.onopen = () => setStatus('ok', 'Bridge connected — waiting for Wokwi');
+    es.onmessage = e => { setStatus('ok', 'Receiving from Wokwi'); handleLine(e.data); };
+    es.addEventListener('status', e => setStatus(e.data.startsWith('!') ? 'bad' : 'ok', e.data.replace(/^!/, '')));
+    es.onerror = () => setStatus('bad', 'Bridge not reachable — run: node bridge.js');
+  }
+  async function goSerial() {
+    if (!('serial' in navigator)) { setStatus('bad', 'Web Serial needs Chrome or Edge'); return; }
+    try {
+      const p = await navigator.serial.requestPort();
+      await disconnect(); setMode('serial'); show(-1, -1, 0);
+      await p.open({ baudRate: 9600 }); port = p; setStatus('ok', 'USB serial connected');
+      const dec = new TextDecoderStream(); p.readable.pipeTo(dec.writable).catch(() => {});
+      reader = dec.readable.getReader(); let buf = '';
+      (async () => { try { for (;;) { const { value, done } = await reader.read(); if (done) break;
+        buf += value; let i; while ((i = buf.indexOf('\n')) >= 0) { handleLine(buf.slice(0, i)); buf = buf.slice(i + 1); } } } catch (e) {} })();
+    } catch (e) { if (e.name !== 'NotFoundError') setStatus('bad', 'Serial: ' + e.message); }
+  }
+  document.querySelectorAll('#modes button').forEach(b => b.onclick = () => ({ bridge: goBridge, serial: goSerial, demo: goDemo })[b.dataset.mode]());
+
+  // ---------- demo: cursor = hand ----------
+  const stage = $('#stage');
+  const demo = d => { const r = fromDist(d); show(r.idx, d, r.b); };
+  const move = e => {
+    if (mode !== 'demo') return;
+    const r = keysEl.getBoundingClientRect(), x = (e.clientX - r.left)/r.width;
+    if (x < 0 || x > 1 || e.clientY < r.top - 120 || e.clientY > r.bottom) demo(-1);
+    else demo(MIN_CM + (MAX_CM - MIN_CM)*x);
+  };
+  stage.addEventListener('pointermove', move);
+  stage.addEventListener('pointerdown', move);
+  stage.addEventListener('pointerleave', () => { if (mode === 'demo') demo(-1); });
+  stage.addEventListener('pointerup', e => { if (mode === 'demo' && e.pointerType !== 'mouse') demo(-1); });
+
+  // ---------- sparkles ----------
+  const cv = $('#fx'), cx = cv.getContext('2d'); let W = 0, H = 0, parts = [];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function resize() { const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1; W = r.width; H = r.height; cv.width = W*dpr; cv.height = H*dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  addEventListener('resize', resize); resize();
+  function frame() {
+    cx.clearRect(0, 0, W, H);
+    if (!reduce && cur >= 0) {
+      const kr = keys[cur].getBoundingClientRect(), cr = cv.getBoundingClientRect();
+      const n = Math.random() < .5 + curB ? 1 + (curB > .6) : 0;
+      for (let i = 0; i < n; i++) parts.push({
+        x: kr.left - cr.left + kr.width*(.15 + .7*Math.random()), y: kr.top - cr.top + 6,
+        vx: (Math.random() - .5)*.6, vy: -(.5 + Math.random()*1.5), s: 1.2 + Math.random()*2.6, l: 1, c: UIRGB[cur] });
+    }
+    cx.globalCompositeOperation = 'lighter';
+    parts = parts.filter(p => p.l > 0);
+    for (const p of parts) {
+      p.x += p.vx; p.y += p.vy; p.vy *= .995; p.l -= .014;
+      cx.beginPath(); cx.fillStyle = `rgba(${p.c},${Math.max(0, p.l)*.9})`;
+      cx.shadowColor = `rgba(${p.c},.9)`; cx.shadowBlur = 10; cx.arc(p.x, p.y, p.s, 0, 6.283); cx.fill();
+    }
+    requestAnimationFrame(frame);
+  }
+  frame();
+
+  // ---------- start: use the bridge if it's already running ----------
+  fetch(BRIDGE + '/ping', { mode: 'cors' }).then(r => r.ok && goBridge()).catch(() => {});
+  show(-1, -1, 0);
+})();
+</script>
+</body>
+</html>
